@@ -49,7 +49,7 @@ jobs:
         id: launch
         run: |
           INSTANCE_ID=$(aws ec2 run-instances \
-            --image-id ami-0c55b159cbfafe1f0 \
+            --image-id ami-0ba80f8099420ac44 \
             --instance-type t3.micro \
             --key-name manmohan \
             --security-group-ids ${{ secrets.SG_ID }} \
