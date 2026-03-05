@@ -55,6 +55,7 @@ jobs:
             --security-group-ids ${{ secrets.SG_ID }} \
             --subnet-id ${{ secrets.SUBNET_ID }} \
             --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=sipeka-nightly-test},{Key=Environment,Value=nightly}]' \
+            --iam-instance-profile Name=sipeka-ec2-profile \
             --user-data file://scripts/ec2-userdata.sh \
             --query 'Instances[0].InstanceId' \
             --output text)
@@ -78,6 +79,9 @@ jobs:
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+            # Wait for userdata to finish and grant docker access
+            sudo chmod 666 /var/run/docker.sock
+
             # Login to ECR
             aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
 
