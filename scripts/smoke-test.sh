@@ -54,7 +54,7 @@ fi
 run_test "Frontend Loading" "http://$HOST" "200"
 
 # Auth endpoint reachable (401 is expected without session)
-run_test "Auth Endpoint (/me)" "http://$HOST:5000/me" "401"
+run_test "Auth Endpoint (/api/me)" "http://$HOST:5000/api/me" "401"
 
 # Static assets
 FRONTEND_RESP=$(curl -s "http://$HOST" 2>/dev/null || echo "")
