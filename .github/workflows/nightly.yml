@@ -65,7 +65,7 @@ jobs:
       - name: Wait for EC2 to be ready
         run: |
           aws ec2 wait instance-running --instance-ids ${{ steps.launch.outputs.instance_id }}
-          sleep 60
+          sleep 180
           TEMP_IP=$(aws ec2 describe-instances \
             --instance-ids ${{ steps.launch.outputs.instance_id }} \
             --query 'Reservations[0].Instances[0].PublicIpAddress' \
@@ -79,7 +79,16 @@ jobs:
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # Wait for userdata to finish and grant docker access
+            # Wait for userdata to finish installing Docker + AWS CLI
+            for i in $(seq 1 12); do
+              if command -v docker &>/dev/null && command -v aws &>/dev/null; then
+                echo "Docker and AWS CLI ready"
+                break
+              fi
+              echo "Waiting for userdata to finish... attempt $i/12"
+              sleep 10
+            done
+
             sudo chmod 666 /var/run/docker.sock
 
             # Login to ECR
