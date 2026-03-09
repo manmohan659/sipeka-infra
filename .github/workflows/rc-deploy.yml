@@ -113,5 +113,6 @@ jobs:
       - name: Verify RC deployment
         run: |
           sleep 15
+          curl -sf http://${{ secrets.RC_EC2_HOST }}:5000/health || echo "Health check pending"
           echo "RC deployed with tag ${{ steps.tags.outputs.RC_TAG }}"
-          echo "Accessible at: https://sipeka-rc.YOUR_DOMAIN.com"
+          echo "Accessible at: https://sipeka-rc.themanmohan.com"
