@@ -48,23 +48,29 @@ jobs:
 
       - name: Retag images with RC label
         env:
-          REGISTRY: ${{ steps.ecr-login.outputs.registry }}
           RC_TAG: ${{ steps.tags.outputs.RC_TAG }}
           SRC_TAG: ${{ steps.tags.outputs.SOURCE_TAG }}
         run: |
-          # Pull source images
-          docker pull $REGISTRY/$ECR_BACKEND:$SRC_TAG
-          docker pull $REGISTRY/$ECR_FRONTEND:$SRC_TAG
+          # Retag using ECR API (no docker pull/push needed)
+          for REPO in $ECR_BACKEND $ECR_FRONTEND; do
+            MANIFEST=$(aws ecr batch-get-image \
+              --repository-name $REPO \
+              --image-ids imageTag=$SRC_TAG \
+              --query 'images[0].imageManifest' \
+              --output text)
 
-          # Retag with RC version (not UUID)
-          docker tag $REGISTRY/$ECR_BACKEND:$SRC_TAG $REGISTRY/$ECR_BACKEND:$RC_TAG
-          docker tag $REGISTRY/$ECR_FRONTEND:$SRC_TAG $REGISTRY/$ECR_FRONTEND:$RC_TAG
+            if [ "$MANIFEST" = "None" ] || [ -z "$MANIFEST" ]; then
+              echo "ERROR: Image $REPO:$SRC_TAG not found in ECR"
+              exit 1
+            fi
 
-          # Push RC-tagged images
-          docker push $REGISTRY/$ECR_BACKEND:$RC_TAG
-          docker push $REGISTRY/$ECR_FRONTEND:$RC_TAG
+            aws ecr put-image \
+              --repository-name $REPO \
+              --image-tag $RC_TAG \
+              --image-manifest "$MANIFEST" || true
 
-          echo "Images retagged: $SRC_TAG -> $RC_TAG"
+            echo "Retagged $REPO: $SRC_TAG -> $RC_TAG"
+          done
 
       - name: Deploy to RC EC2
         uses: appleboy/ssh-action@v1
