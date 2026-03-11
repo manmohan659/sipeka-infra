@@ -263,6 +263,8 @@ jobs:
     permissions:
       actions: write
     steps:
+      - uses: actions/checkout@v4
+
       - name: Check for release tag on source repo
         id: check-release
         run: |
