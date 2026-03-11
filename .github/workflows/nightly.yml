@@ -190,7 +190,7 @@ jobs:
     name: Deploy to QA EC2
     runs-on: ubuntu-latest
     needs: verify-on-temp-ec2
-    if: needs.verify-on-temp-ec2.outputs.test_passed == 'true'
+    if: always() && needs.verify-on-temp-ec2.outputs.test_passed == 'true'
     steps:
       - uses: actions/checkout@v4
 
@@ -259,7 +259,7 @@ jobs:
     name: Trigger RC Promotion
     runs-on: ubuntu-latest
     needs: deploy-to-qa
-    if: github.event_name == 'repository_dispatch'
+    if: always() && needs.deploy-to-qa.result == 'success' && github.event_name == 'repository_dispatch'
     permissions:
       actions: write
     steps:
