@@ -46,7 +46,7 @@ docker run -d --name backend --network sipeka-net --restart unless-stopped \
 # Start frontend
 echo "Starting frontend..."
 docker run -d --name frontend --network sipeka-net --restart unless-stopped \
-    -p 80:80 -p 443:443 \
+    -p 80:8080 -p 443:8443 \
     -v /etc/letsencrypt:/etc/nginx/ssl:ro \
     -v /home/ubuntu/nginx-ssl.conf:/etc/nginx/conf.d/default.conf:ro \
     $ECR_REGISTRY/sipeka-frontend:$IMAGE_TAG
