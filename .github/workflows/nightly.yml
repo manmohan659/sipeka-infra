@@ -18,8 +18,58 @@ env:
   ECR_FRONTEND: sipeka-frontend
 
 jobs:
+  rebuild-images:
+    name: Rebuild Docker Images
+    if: github.event_name != 'repository_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger build-push workflow in app repo
+        env:
+          GH_TOKEN: ${{ secrets.INFRA_REPO_PAT }}
+        run: |
+          gh workflow run build-push.yml \
+            --repo manmohan659/sipeka \
+            --ref main \
+            -f skip_infra_trigger=true
+
+      - name: Wait for build to complete
+        env:
+          GH_TOKEN: ${{ secrets.INFRA_REPO_PAT }}
+        timeout-minutes: 20
+        run: |
+          sleep 15
+
+          RUN_ID=""
+          for attempt in $(seq 1 24); do
+            RUN_ID=$(gh run list \
+              --repo manmohan659/sipeka \
+              --workflow build-push.yml \
+              --event workflow_dispatch \
+              --limit 1 \
+              --json databaseId,status \
+              --jq 'map(select(.status == "queued" or .status == "in_progress")) | .[0].databaseId')
+
+            if [ -n "$RUN_ID" ] && [ "$RUN_ID" != "null" ]; then
+              break
+            fi
+            echo "Waiting for workflow run to appear (attempt $attempt/24)..."
+            sleep 5
+          done
+
+          if [ -z "$RUN_ID" ] || [ "$RUN_ID" = "null" ]; then
+            echo "::error::Timed out waiting for build-push.yml run to appear"
+            exit 1
+          fi
+
+          echo "Watching workflow run $RUN_ID..."
+          gh run watch "$RUN_ID" --repo manmohan659/sipeka --exit-status
+
   verify-on-temp-ec2:
     name: Spin Up Temp EC2 & Smoke Test
+    needs: [rebuild-images]
+    if: >-
+      always() &&
+      (needs.rebuild-images.result == 'success' || needs.rebuild-images.result == 'skipped')
     runs-on: ubuntu-latest
     outputs:
       instance_id: ${{ steps.launch.outputs.instance_id }}
