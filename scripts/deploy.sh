@@ -40,7 +40,7 @@ docker run -d --name backend --network sipeka-net --restart unless-stopped \
     -e DB_HOST=$DB_HOST -e DB_USER=$DB_USER -e DB_PASSWORD=$DB_PASSWORD \
     -e DB_NAME=db_penggajian3 -e SESS_SECRET=$SESS_SECRET \
     -e APP_PORT=5000 -e NODE_ENV=production -e CORS_ORIGIN=* \
-    -p 5000:5000 \
+    -p 127.0.0.1:5000:5000 \
     $ECR_REGISTRY/sipeka-backend:$IMAGE_TAG
 
 # Start frontend
@@ -48,7 +48,7 @@ echo "Starting frontend..."
 docker run -d --name frontend --network sipeka-net --restart unless-stopped \
     -p 80:8080 -p 443:8443 \
     -v /etc/letsencrypt:/etc/nginx/ssl:ro \
-    -v /home/ubuntu/nginx-ssl.conf:/etc/nginx/conf.d/default.conf:ro \
+    -v /home/ubuntu/nginx-ssl.conf:/etc/nginx/templates/default.conf.template:ro \
     $ECR_REGISTRY/sipeka-frontend:$IMAGE_TAG
 
 # Wait and verify
