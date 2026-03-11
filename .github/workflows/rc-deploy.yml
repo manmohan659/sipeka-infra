@@ -107,18 +107,18 @@ jobs:
               -e DB_HOST=$DB_HOST -e DB_USER=$DB_USER -e DB_PASSWORD=$DB_PASSWORD \
               -e DB_NAME=db_penggajian3 -e SESS_SECRET=$SESS_SECRET \
               -e APP_PORT=5000 -e NODE_ENV=production -e CORS_ORIGIN=* \
-              -p 5000:5000 \
+              -p 127.0.0.1:5000:5000 \
               ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_BACKEND }}:$RC_TAG
 
             docker run -d --name frontend --network sipeka-net --restart unless-stopped \
               -p 80:8080 -p 443:8443 \
               -v /etc/letsencrypt:/etc/nginx/ssl:ro \
-              -v /home/ubuntu/nginx-ssl.conf:/etc/nginx/conf.d/default.conf:ro \
+              -v /home/ubuntu/nginx-ssl.conf:/etc/nginx/templates/default.conf.template:ro \
               ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_FRONTEND }}:$RC_TAG
 
       - name: Verify RC deployment
         run: |
           sleep 15
-          curl -sf http://${{ secrets.RC_EC2_HOST }}:5000/health || echo "Health check pending"
+          curl -sf -k https://${{ secrets.RC_EC2_HOST }}/health || echo "Health check pending"
           echo "RC deployed with tag ${{ steps.tags.outputs.RC_TAG }}"
           echo "Accessible at: https://sipeka-rc.themanmohan.com"

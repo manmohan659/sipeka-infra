@@ -37,11 +37,11 @@ run_test() {
     return 1
 }
 
-# Backend health check
-run_test "Backend Health" "http://$HOST:5000/health" "200"
+# Backend health check (via frontend proxy)
+run_test "Backend Health" "http://$HOST/health" "200"
 
-# Backend returns JSON
-HEALTH_RESP=$(curl -s "http://$HOST:5000/health" 2>/dev/null || echo "{}")
+# Backend returns JSON (via frontend proxy)
+HEALTH_RESP=$(curl -s "http://$HOST/health" 2>/dev/null || echo "{}")
 if echo "$HEALTH_RESP" | grep -q '"status":"ok"'; then
     echo "[PASS] Health response contains status:ok"
     pass=$((pass + 1))
@@ -53,8 +53,8 @@ fi
 # Frontend serves HTML
 run_test "Frontend Loading" "http://$HOST" "200"
 
-# Auth endpoint reachable (401 is expected without session)
-run_test "Auth Endpoint (/api/me)" "http://$HOST:5000/api/me" "401"
+# Auth endpoint reachable via frontend proxy (401 is expected without session)
+run_test "Auth Endpoint (/api/me)" "http://$HOST/api/me" "401"
 
 # Static assets
 FRONTEND_RESP=$(curl -s "http://$HOST" 2>/dev/null || echo "")
